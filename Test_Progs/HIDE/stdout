@@ -2,4 +2,5 @@
 
 use Shell::POSIX::Select;
 
-select (1,2) { print "$_\n"; }
+print STDOUT "STDOUT\n";
+

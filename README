@@ -1,4 +1,4 @@
-                Shell/POSIX/Select version 0.02
+                Shell/POSIX/Select version 0.04
                 ===============================
 
 INSTALLATION
@@ -23,10 +23,6 @@ This module requires these other modules and libraries:
 NAME
 
     Shell::POSIX::Select - The POSIX Shell's "select" loop for Perl
-
-VERSION
-
-    0.02
 
 PURPOSE
 
