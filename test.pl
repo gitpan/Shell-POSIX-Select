@@ -1,7 +1,16 @@
 #! /usr/bin/perl
 
+#########################################################
+#  tim@TeachMePerl.com  (888) DOC-PERL  (888) DOC-UNIX  #
+#  Copyright 2002-2003, Tim Maher. All Rights Reserved  #
+#########################################################
+
+# test.pl for
+#	Shell::POSIX::Select 
+
 # Tim Maher, tim@teachmeperl.com
 # Sun May  4 00:30:52 PDT 2003
+# Mon May  5 18:40:33 PDT 2003
 
 use File::Spec::Functions;
 use Test::More ;
@@ -17,6 +26,7 @@ plan tests => $num_tests * 2  + 2;
 
 BEGIN {
 
+	$author='yumpy@cpan.org' ;
 	# must tell it where to find module, before it's installed
 	$ENV{PERL5LIB}.='blib/lib:blib/arch';	# needed for test programs
 	unshift @INC, 'blib/lib', 'blib/arch' ;	# My solaris 9 box needs this too!
@@ -34,7 +44,7 @@ BEGIN {
 
 	# @Testdirs=( $test_dir, $ref_dir, $cbugs_dir, $rbugs_dir );
 
-	chdir 'Test_Progs' or die "$!";
+	chdir 'Test_Progs' or die "Cannot cd to Test_Progs, $!";
 	$DEBUG >2 and system "ls -l ";
 
 	@testfiles= grep ! /^\.|\.bak$|dump$|_ref$|bogus$/, <*>;
@@ -43,7 +53,7 @@ BEGIN {
 	$DEBUG > 2 and @testfiles = $testfiles[0];
 	# @testfiles = 'arrayvar';
 
-	chdir( updir() ) or die "$!";
+	chdir( updir() ) or die "Cannot cd to updir, $!";
 
 	chomp @testfiles;
 	$num_tests = scalar @testfiles;
@@ -89,15 +99,17 @@ if (
 		# Or maybe just eval the code?
 		$script = catfile( 'Test_Progs', $_ );
 		system "perl '$script'" ;
-		if ($?) {
-			warn "$0: Reference code-dump of $_ failed with code $?\n";
-			# $DEBUG >2 and system "ls -ld $_ $codeR $screenR";
-			die;
+		$err=$?>>8;
+		if ( $err and $err ne 222 ) {	# code 222 is good exit
+			warn "$0: Reference code-dump of $_ failed with code $err\n";
+			system "ls -ld '$script' $codeR $screenR ";
+			# $DEBUG >2 and system "ls -ld $ $codeR $screenR";
+			die "$0: Fatal Error\n";
 		}
 		else {
 			$error=`egrep 'syntax | aborted' $screenR 2>/dev/null`;
 			$? or
-				die "Compilation failed for '$screenR'\n\n$error\n";
+				die "$0: Compilation failed for '$screenR'\n\n$error\n";
 		}
 		# Screen file can be empty, so just check existence and perms
 		check_file ($screenR) or die "$screenR is bad\n";
@@ -119,10 +131,11 @@ if (
 
 # On *every* run, compare the reference data to newly dumped output
 
-print "TESTING MODULE AGAINST REFERENCE DATA\n\n";
+print "TESTING GENERATED CODE AGAINST REFERENCE DATA\n\n";
 
 # warn "\@INC is now @INC\n";
-use_ok('Shell::POSIX::Select') or die;
+use_ok('Shell::POSIX::Select') or
+	die "$0: Cannot load module under test\n";
 require_ok('Shell::POSIX::Select');
 
 # Configure ENV vars so module dumps the requried data
@@ -139,7 +152,7 @@ foreach (@testfiles) {
 	$script = catfile( 'Test_Progs', $_ );
 	# Later on, insert check for "*bogus" scripts to return error
 	system "perl '$script'" ;
-	$err=$?;
+	$err=$?>>8;
 
 	$DEBUG >2 and system "echo; ls -rlt . | tail -4 ";
 	if ( $err ) { $DEBUG and warn "Module returned $? for $_, $!"; }
@@ -155,14 +168,16 @@ foreach (@testfiles) {
 	}
 	# Do cheap file-size comp first; string comparison later if needed
 	if (-s $code != -s $codeR) {
-		warn "Code dumps unequally sized for $_: ",
+		warn "\t** Code dumps unequally sized for $_: ",
 			-s $code,  " vs. ", -s $codeR, "\n";
+		push @email_list,  "$code\n", "$codeR\n"; 
 		$DEBUG >2 and system "ls -li $code $codeR";
 		fail ($code);	# force test to report failure
 	}
 	if (-s $screen != -s $screenR) {
-		warn "Screen dumps unequally sized for $_: ",
+		warn "\t** Screen dumps unequally sized for $_: ",
 			-s $screen,  " vs. ", -s $screenR, "\n";
+		push @email_list,  "$screen\n", "$screenR\n"; 
 		$DEBUG >2 and system "ls -li $screen $screenR";
 		fail ($screen);	# force tests to report failure
 	}
@@ -194,6 +209,12 @@ foreach (@testfiles) {
 		$ret and !$DEBUG and unlink $screen;
 	}
 }
+@email_list and  do {
+	warn "\n** Please email the following files to $author **\n\n", @email_list;
+	warn "\n** Please email the above files to $author **\n";
+};
+
+warn "Test Finished\n";
 exit 0;
 
 sub check_file {
