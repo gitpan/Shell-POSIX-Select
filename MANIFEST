@@ -47,6 +47,8 @@ Ref_Data/select2foreach.cdump_ref
 Ref_Data/sub2.cdump_ref
 Scripts/README
 Scripts/SCRIPTS.rme
+Scripts/file1.py
+Scripts/file2.py
 Test_Progs/HIDE/other_select1
 Test_Progs/HIDE/other_select2
 Test_Progs/HIDE/stderr
