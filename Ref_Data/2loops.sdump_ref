@@ -1,0 +1,82 @@
+Number found where operator expected at test.2loops line 84, near "# warn "40"
+  (Might be a runaway multi-line "" string starting on line 80)
+	(Missing operator before 40?)
+String found where operator expected at test.2loops line 85, near "# I get ""
+  (Might be a runaway multi-line "" string starting on line 84)
+	(Missing semicolon on previous line?)
+Bareword found where operator expected at test.2loops line 85, near "use of uninitialized"
+	(Do you need to predeclare use?)
+Unquoted string "in" may clash with future reserved word at test.2loops line 85.
+Bareword found where operator expected at test.2loops line 88, near "#+ warn "Waiting"
+  (Might be a runaway multi-line "" string starting on line 85)
+	(Missing operator before Waiting?)
+Unquoted string "input" may clash with future reserved word at test.2loops line 88.
+String found where operator expected at test.2loops line 91, near "#+ warn ""
+  (Might be a runaway multi-line "" string starting on line 88)
+	(Missing semicolon on previous line?)
+Bareword found where operator expected at test.2loops line 91, near "#+ warn "Got"
+	(Missing operator before Got?)
+String found where operator expected at test.2loops line 95, near "defined "" and ""
+	(Do you need to predeclare defined?)
+String found where operator expected at test.2loops line 95, near "" and "" ne ""
+	(Missing operator before " ne "?)
+String found where operator expected at test.2loops line 95, near "" ne "" and print STDERR ""
+	(Missing operator before " and print STDERR "?)
+String found where operator expected at test.2loops line 102, near "# warn ""
+  (Might be a runaway multi-line "" string starting on line 95)
+	(Missing semicolon on previous line?)
+Bareword found where operator expected at test.2loops line 102, near "# warn "User"
+	(Missing operator before User?)
+String found where operator expected at test.2loops line 106, near "0 > 2 and warn ""
+  (Might be a runaway multi-line "" string starting on line 102)
+	(Missing semicolon on previous line?)
+Bareword found where operator expected at test.2loops line 106, near "0 > 2 and warn "Lasting"
+	(Missing operator before Lasting?)
+Unquoted string "n" may clash with future reserved word at test.2loops line 106.
+String found where operator expected at test.2loops line 110, near "!defined $Reply and die ""
+  (Might be a runaway multi-line "" string starting on line 106)
+	(Missing semicolon on previous line?)
+Bareword found where operator expected at test.2loops line 110, near "!defined $Reply and die "REPLY"
+	(Missing operator before REPLY?)
+Unquoted string "undefined" may clash with future reserved word at test.2loops line 110.
+String found where operator expected at test.2loops line 114, near "defined ""
+  (Might be a runaway multi-line "" string starting on line 110)
+	(Missing semicolon on previous line?)
+String found where operator expected at test.2loops line 114, near "defined "" and ""
+	(Do you need to predeclare defined?)
+String found where operator expected at test.2loops line 114, near "" and "" ne ""
+	(Missing operator before " ne "?)
+String found where operator expected at test.2loops line 114, near "" ne "" and print STDERR ""
+	(Missing operator before " and print STDERR "?)
+String found where operator expected at test.2loops line 116, near "#print STDERR ""
+  (Might be a runaway multi-line "" string starting on line 114)
+	(Missing semicolon on previous line?)
+Scalar found where operator expected at test.2loops line 116, near "#print STDERR "$Shell::POSIX::Select::menu"
+	(Missing operator before $Shell::POSIX::Select::menu?)
+Backslash found where operator expected at test.2loops line 116, near "$Shell::POSIX::Select::menu\"
+	(Missing operator before \?)
+String found where operator expected at test.2loops line 119, near "$Shell::POSIX::Select::U_WARN > 1 and warn ""
+  (Might be a runaway multi-line "" string starting on line 117)
+	(Missing semicolon on previous line?)
+Backslash found where operator expected at test.2loops line 119, near "$Shell::POSIX::Select::U_WARN > 1 and warn "\"
+	(Missing operator before \?)
+Unquoted string "empty" may clash with future reserved word at test.2loops line 119.
+Backslash found where operator expected at test.2loops line 119, near "empty\"
+Unquoted string "n" may clash with future reserved word at test.2loops line 119.
+String found where operator expected at test.2loops line 124, near "and warn ""
+  (Might be a runaway multi-line "" string starting on line 119)
+	(Missing semicolon on previous line?)
+Unrecognized escape \D passed through at test.2loops line 119.
+Backslash found where operator expected at test.2loops line 124, near "and warn "\"
+	(Do you need to predeclare and?)
+Backslash found where operator expected at test.2loops line 124, near "'$Reply'\"
+	(Missing operator before \?)
+Unquoted string "n" may clash with future reserved word at test.2loops line 124.
+String found where operator expected at test.2loops line 130, near """
+  (Might be a runaway multi-line "" string starting on line 124)
+	(Missing semicolon on previous line?)
+Backslash found where operator expected at test.2loops line 130, near ""\"
+	(Missing operator before \?)
+syntax error at test.2loops line 84, near "# warn "40"
+"use" not allowed in expression at test.2loops line 85, at end of line
+Bad name after t' at test.2loops line 130.
