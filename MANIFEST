@@ -7,8 +7,6 @@ Select.pm
 Makefile.PL
 browse_images.0
 browse_images.plx.PL
-browse_jpeg.0
-browse_jpeg.plx.PL
 browse_records.0
 browse_records.plx.PL
 delete_file.0
@@ -16,7 +14,6 @@ delete_file.plx.PL
 lc_filename.0
 lc_filename.plx.PL
 long_listem.0
-long_listem.plx.PL
 menu_ls.0
 menu_ls.plx.PL
 order.0
@@ -29,8 +26,6 @@ pick_file.0
 pick_file.plx.PL
 Compile_Bugs/dual_select
 Compile_Bugs/require
-Ref_Data/2loops.cdump_ref
-Ref_Data/2loops.sdump_ref
 Ref_Data/alldefaults.cdump_ref
 Ref_Data/alldefaults.sdump_ref
 Ref_Data/argv_heading.cdump_ref
@@ -45,12 +40,6 @@ Ref_Data/localvar.cdump_ref
 Ref_Data/localvar.sdump_ref
 Ref_Data/myvar.cdump_ref
 Ref_Data/myvar.sdump_ref
-Ref_Data/nest2.cdump_ref
-Ref_Data/nest2.sdump_ref
-Ref_Data/nested.cdump_ref
-Ref_Data/nested.sdump_ref
-Ref_Data/nested2.cdump_ref
-Ref_Data/nested2.sdump_ref
 Ref_Data/nested2a.cdump_ref
 Ref_Data/nested2a.sdump_ref
 Ref_Data/nested2b.cdump_ref
@@ -63,8 +52,6 @@ Ref_Data/no_decl_var.cdump_ref
 Ref_Data/no_decl_var.sdump_ref
 Ref_Data/novar.cdump_ref
 Ref_Data/novar.sdump_ref
-Ref_Data/options1.bogus.cdump_ref
-Ref_Data/options1.bogus.sdump_ref
 Ref_Data/other_select1.cdump_ref
 Ref_Data/other_select1.sdump_ref
 Ref_Data/other_select2.cdump_ref
@@ -81,6 +68,8 @@ Ref_Data/select2foreach.cdump_ref
 Ref_Data/select2foreach.sdump_ref
 Ref_Data/sub2.cdump_ref
 Ref_Data/sub2.sdump_ref
+Ref_Data/test.myvar.cdump_ref
+Ref_Data/test.myvar.sdump_ref
 Scripts/README
 Scripts/SCRIPTS.rme
 Test_Progs/alldefaults

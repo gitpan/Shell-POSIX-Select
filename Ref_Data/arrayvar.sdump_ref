@@ -1,4 +1,0 @@
-Array found where operator expected at Test_Progs/arrayvar line 5, near "] "
-	(Missing operator before  ?)
-syntax error at Test_Progs/arrayvar line 5, near "] @ARGV"
-Execution of Test_Progs/arrayvar aborted due to compilation errors.

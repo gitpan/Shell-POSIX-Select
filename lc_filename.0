@@ -5,12 +5,13 @@
 #########################################################
 use Shell::POSIX::Select (
     '$Eof' ,
-    prompt => 'Enter number (^D to exit):'
+    prompt => 'Enter number (^D to exit):' ,
+    style =>  'Korn'	# for automatic prompting
 );
 
 # Rename selected files from current dir to lowercase
-while (1) {    # restarts select to get updated menu
-   select ( <*[A-Z]*> ) { # skip fully lower-case names
+while ( @files=<*[A-Z]*> ) {    # restarts select to get updated menu
+   select ( @files ) { # skip fully lower-case names
        if (rename $_, "\L$_") {
            last ;
        }

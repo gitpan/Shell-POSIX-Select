@@ -2,6 +2,7 @@ package Shell::POSIX::Select;
 
 # Tim Maher, tim@teachmeperl.com, yumpy@cpan.org
 # Fri May  2 10:29:25 PDT 2003
+# Mon May  5 10:51:49 PDT 2003
 
 # TO DO: portable-ize tput stuff
 # WHen lasting out of a nested loop, should reset do_prompt for outer one
@@ -81,14 +82,12 @@ $DEBUG > 0 and warn "Logging is $LOGGING\n";
 
 # controls messages and carp vs. warn (but that doesn't do much)
 $PRODUCTION=1; 
-$PRODUCTION=0; #+
 $PRODUCTION and $REPORT=$DEBUG_FILT=$DEBUG=0;
 
 sub _WARN; sub _DIE;
 
 local $_;	# avoid clobbering user's by accident
 
-$Shell::POSIX::Select::_Fudging=0;	#+
 
 $Shell::POSIX::Select::_default_style='K';	# default loop-style is Kornish
 $Shell::POSIX::Select::_default_prompt= "\nEnter number of choice:";
@@ -103,7 +102,7 @@ $U_WARN_default = 1;	# for enabling user-warnings for bad interactive input
 
 # $_import_called > 0 or import(); # ensure initialization of defaults
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 my $subname=__PACKAGE__ ;	# for identifying messages from outside sub's
 
@@ -115,7 +114,6 @@ $select2foreach=0;
 # I know about Term::Cap, but this seems more direct and sufficient
 
 # disable buffering
-$DEBUG > 0 and do { my $old_fh = select (STDERR); $|=1; select ($old_fh); }; #+
 
 $Shell::POSIX::Select::_FILTER_CALLS= $Shell::POSIX::Select::_ENLOOP_CALL_COUNT= $Shell::POSIX::Select::_LOOP_COUNT=0;
 # Number of select loops detected
@@ -157,7 +155,6 @@ my $RE_kw_and_decl = qr^
 	)?
 ^x;	# extended-syntax, allowing comments, etc.
 
-	# (?{ $DEBUG > 0 and defined $1 and warn "Matched the loop-var as: $1"; }) #+
 
 	my $RE_list = qr^
 	\s*
@@ -186,10 +183,7 @@ my $RE_kw_and_decl = qr^
 		my $detect_msg='<unset>';
 
 		++$::_FILTER_CALLS;
-		$REPORT > 0 and _WARN "\n$subname entered, call #$::_FILTER_CALLS\n"; #+
 
-		$DEBUG_FILT > 1 and warn "Really Original string:  '$_'"; #+
-		$DEBUG_FILT > 1 and warn 'Size of string is: ', length $_, "\n"; #+
 
 		$orig_string ne $_ and die "$_ got trashed";
 
@@ -200,16 +194,12 @@ my $RE_kw_and_decl = qr^
 
 		my $first_celador;
 		if ( $last_call = ($_ eq "") ) {
-		$DEBUG > 1 and warn "$subname: FINAL CALL\n"; #+
 			return undef ;	
 		}
 		else {
 			$detect_msg="SELECT LOOP DETECTED";
 			$orig_string ne $_ and die "$_ got trashed";
 
-			#$DEBUG_FILT > 2 and warn "$subname: RE_kw_and_decl is: $RE_kw_and_decl\n"; #+
-			#$DEBUG_FILT > 2 and warn "$subname: $RE_list is: $RE_list\n"; #+
-			#$DEBUG_FILT > 2 and warn "$subname: $RE_block is: $RE_block\n"; #+
 
 				$DEBUG > 1 and show_subs("****** Pre-Pre-WHILE ****** \n","");
 			$DEBUG > 1 and $LOGGING and print LOG "\$_ is '$_'\n"; 
@@ -228,7 +218,6 @@ my $RE_kw_and_decl = qr^
 				pos()=0;
 				/\S/ or $LOGGING and
 					print LOG "\$_ is all white space or else empty\n";
-				/\S/ or $DEBUG > 4 and _WARN "\$_ is all white space or else empty\n\n\n\n"; #+
 
 				#	/(..)/ and warn "Matched chars: '$1'\n";	# prime the pos marker
 
@@ -249,8 +238,6 @@ my $RE_kw_and_decl = qr^
 					my $iteration=0;
 			FIND_LOOP:
 					my ($loop_var, $loop_decl, $loop_list, $loop_block)= ("" x 3);
-					$DEBUG_FILT > 0 and	#+
-						show_subs ("String starts with: ", $_, pos() || 0, 100);	#+
 
 					$DEBUG_FILT > 0 and warn "Pos initially at ", pos($_), "\n";
 
@@ -263,41 +250,32 @@ my $RE_kw_and_decl = qr^
 					my $RE = $RE_kw1  ; 	# always restart from the beginning, of incrementally modified program
 					# Same pattern good now, since pos() will have been reset by mod
 					# my $RE = ( $loopnum == 1 ? $RE_kw1 : $RE_kw1 ) ; 	# second version uses \G
-					$DEBUG_FILT > 1 and show_subs ("LOOKING FOR 'select' in: " , $_, pos() || 0, 10); #+
 					if ( /$RE/g ) {	# try to match keyword, "select"
 						++$matched ;
 						$match=$1;
 						$start_match=pos() - length $1;
 						$got_kw=1;
-						$DEBUG_FILT > 1 and show_context($`, $1, $');	#+
 						$DEBUG_FILT > 1 and show_progress($match, pos(), $_);
 					}
 					else {
-						$DEBUG_FILT > 0 and #+
-							show_subs( "Out of keywords; leaving filter's while loop\n",""); #+
 						# no more select keywords to process! # LOOP EXIT #1
 						goto FILTER_EXIT;
 					}
 
 					$pos=pos();	# remember position
 
-					$DEBUG_FILT > 1 and show_subs ("LOOKING FOR decl in: " , $_, pos(), 10); #+
 					if (/\G$RE_decl/g) {
 						++$matched ;
-						$DEBUG_FILT > 0 and warn "RE_decl matched '$1'\n" , length $1, " characters\n"; #+
-						$DEBUG_FILT > 1 and show_context($`, $1, $');	#+
 						$loop_decl=$1;
 						$match.=" $1";
 						$got_decl=1;
 					}
 					else {
-						$DEBUG_FILT > 0 and warn "RE_decl failed to match\n"; #+
 						pos()=$pos; # reset to where we left off
 					}
 					$DEBUG_FILT > 1 and show_progress($match, pos(), $_);
 
 					my @rest;
-					$DEBUG_FILT > 1 and show_subs ("LOOKING FOR loop_var in: " , $_, pos(), 19); #+
 					$DEBUG_FILT > 0 and warn "POS before ext-var is now ", pos(), "\n";
 
 					( $loop_var, @rest ) = extract_variable( $_ );
@@ -309,18 +287,14 @@ my $RE_kw_and_decl = qr^
 						$got_loop_var=1;
 						$DEBUG_FILT > 0 and warn "Got_Loop_Var matched '$loop_var'\n";
 						$match.=" $loop_var";
-						$DEBUG_FILT > 2 and @rest and warn "rest contains: '@rest'\n"; #+
 					}
 					else {
 							pos()=$pos; # reset to where we left off
 							$DEBUG_FILT > 0 and warn "extract_variable failed to match\n";
 					}
-							$DEBUG_FILT > 0 and show_subs( "2 remaining string: ", $_, pos(),19); #+
 					$DEBUG_FILT > 1 and show_progress($match, pos(), $_);
 
 					gobble_spaces();
-					$DEBUG_FILT > 1 and show_subs ("LOOKING FOR LIST in: " , $_, pos(), 10); #+
-					$DEBUG_FILT > 1 and warn "Pos is currently: ", pos(), "\n"; #+
 
 					# $DEBUG_FILT > 0 and warn "Pre-extract_bracketed ()\n";
 					( $loop_list, @rest ) = extract_bracketed($_, '()');
@@ -354,8 +328,6 @@ my $RE_kw_and_decl = qr^
 					}
 
 					gobble_spaces();
-					$DEBUG_FILT > 1 and show_subs ("LOOKING FOR BLOCK in: " , $_, pos(), 10); #+
-					$DEBUG_FILT > 5 and warn "Using extract_bracketed\n"; #+
 
 					( $loop_block, @rest ) = extract_bracketed($_, '{}');
 					if (defined $loop_block and $loop_block ne "") {
@@ -365,8 +337,6 @@ my $RE_kw_and_decl = qr^
 						$DEBUG_FILT > 1 and show_progress($match, pos(), $_);
 					}
 					else {
-						$DEBUG_FILT > 1 and warn "extract_block failed to match\n"; #+
-						$DEBUG_FILT > 1 and show_subs( "Remaining string: ", $_, pos() ); #+
 						# if $var there, can't possibly be select syscall or function use,
 						# so 100% sure there's a problem
 
@@ -391,7 +361,6 @@ my $RE_kw_and_decl = qr^
 
 					my $end_match;
 					if ( $matched == 0 ) {
-						$DEBUG > 1 and $detect_msg="SELECT KEYWORD *NOT* DETECTED"; #+
 die" Can it ever get here?";
 						goto FILTER_EXIT;
 					}
@@ -399,7 +368,6 @@ die" Can it ever get here?";
 						$end_match=pos();
 						$detect_msg='<unset>';
 						if ( $matched == 1 ) { # means "select" keyword only
-							$DEBUG > 1 and $detect_msg="select used in non-looping form"; #+
 							;
 						}
 						if ( $matched == 2 ) { # means "select" plus decl, var, list, or block
@@ -408,7 +376,6 @@ die" Can it ever get here?";
 							$got_codeblock or $detect_msg.= "no {CODE} detected\n";
 						}
 						elsif ( $matched >= 3 ) {
-							$DEBUG > 1 and $detect_msg="SELECT LOOP DETECTED "; #+
 						}
 					}
 
@@ -419,9 +386,6 @@ die" Can it ever get here?";
 
 				if ( $matched > 1 ) {	# 1 just means select->foreach conversion
 					$::_LOOP_COUNT++;  # counts # detected select-loops
-					$DEBUG > 1 and warn "Select Loop Detected, on call #$::_FILTER_CALLS\n"; #+
-					#$DEBUG > 0 and $LOGGING and print LOG "MATCHED: $&\n"; #+
-					#$DEBUG > 0 and $LOGGING and print LOG "CONVERTED TO:\f$_\n"; #+
 					$DEBUG > 0 and 
 						warn "$PKG: Set debug to: $Shell::POSIX::Select::DEBUG\n";
 				}
@@ -439,7 +403,6 @@ die" Can it ever get here?";
 									$loop_list,
 										$loop_block ),
 											$::_LOOP_COUNT;
-							# $DEBUG > 0 and die "Replacer: $replacer\n"; #+
 									
 							substr($_, $start_match, ($end_match-$start_match), $replacer );
 							# print "\n\nModified \$_ is: \n$_\n";
@@ -457,7 +420,6 @@ FILTER_EXIT:
 	$loopnum == 2 and $detect_msg  !~ /SELECT LOOP DETECTED/ and
 		defined $first_celador and $first_celador ne $_ and warn "celador mismatch";
 		$LOGGING and print USERPROG $_;	# $_ unset 2nd call; label starts below
-		# $DEBUG > 1 and warn "$ON$detect_msg, on call #$::_FILTER_CALLS$:OFF\n\n"; #+
 		$DEBUG_FILT > 2 and _WARN "Leaving $subname on call #$::_FILTER_CALLS\n";
 	}	# end sub filter
 }	# Scope for declaration of filters' REs
@@ -466,7 +428,6 @@ FILTER_EXIT:
 sub show_progress {
 	my $subname = sub_name();
 
-	$REPORT > 0 and _WARN "$subname entered\n"; #+
 
 	my ($match, $pos, $string) = @_;
 
@@ -479,27 +440,18 @@ sub show_progress {
 sub show_context {
 	my $subname = sub_name();
 
-	$REPORT > 0 and _WARN "$subname entered\n"; #+
 
 	my ($left, $match, $right) = @_;
 
 	$DEBUG > 0 and warn "left/match/right: $left/$match/$right";
 
 	show_subs( "Left is", $left, -10);
-	$DEBUG > 0 and warn "MATCH IS '$match'\n" , length $match, " characters\n"; #+
 	show_subs( "Right is", $right, 0, 10);
 }
 
-sub filter0 {    #+
 	my $orig_string=$_;
 
-	my $subname = sub_name();    #+
-	$REPORT > 0 and _WARN "\n$subname entered, call #$::_FILTER_CALLS\n"; #+
 
-	$DEBUG_FILT > 1 and warn "Really Original string:  '$_'"; #+
-	$DEBUG_FILT > 1 and warn '4: Size of string is: ', length $_, "\n"; #+
-	$DEBUG_FILT > 1 and show_subs( "Original string: ", $orig_string); #+
-}    #+
 
 # Following sub converts matched elements of users source into the 
 # fields we need: declaration (optional), loop_varname (optional), codeblock
@@ -509,23 +461,17 @@ sub matches2fields {
 	my $subname = sub_name();
 	my $default_loopvar = 0;
 
-	$REPORT > 0 and _WARN "$subname entered\n"; #+
 
 	my ( $debugging_code, $codeblock2,  );
 	my ( $decl, $loop_var, $values, $codeblock, $fullmatch ) = @_;
 
 	$debugging_code = "";
 
-#	$DEBUG > 2 and warn "\$one is: $one\n"; #+
 
-	$DEBUG > 2 and _WARN "\$decl is: $decl\n"; #+
-	$DEBUG > 2 and _WARN "\$loop_var is: $loop_var\n"; #+
 
 #+	if ( $Shell::POSIX::Select::_Fudging and $two =~ /[\000..\025]/ ) {
-#+		$DEBUG > 2 and _WARN "Fudging in list for \$two; control chars there!: '$two'!\n"; #+
 #+		$two = '1 ,2';
 #+	}
-#+	$DEBUG > 2 and _WARN "\$two is: $two\n";	#+
 
 	$debugging_code = "";
 	if ($U_DEBUG > 3) {
@@ -537,7 +483,6 @@ sub matches2fields {
 		$debugging_code .= 'warn "\@_ is: @_\n";';
 		$debugging_code .= 'warn "\@ARGV is: @ARGV\n";';
 
-	#$DEBUG > 2 and warn "LOADING looplist as @::looplist\n"; #+
 	#	$debugging_code .=
 	#	  'warn "\@looplist is : @Shell::POSIX::Select::looplist\n"';
 		$debugging_code .= "# USER-MODE DEBUGGING CODE ENDS HERE\n\n";
@@ -545,7 +490,6 @@ sub matches2fields {
 		$debugging_code .= "";
 	}
 
-	#+ warn "Checking list properties";
 	if ( !defined $values or $values =~ /^\s*\(\s*\)\s*$/ ) {  # ( ) is legit syntax
 	# warn "values is undef or vacant";
 		# Code to let user prog figure out if select loop is in sub,
@@ -554,11 +498,8 @@ sub matches2fields {
 		'defined  ((( caller 0 )[3]) and ' .
 			' (( caller 0 )[3])  ne "") ? @_ : @ARGV '
 		  ;    
-	# _WARN "$subname: Using for loop-list: $values\n"; #+
-		  $DEBUG > 2 and _WARN "$subname: Using for loop-list: $values\n"; #+
 	}
 
-	$DEBUG > 2 and _WARN "\$codeblock is: $codeblock\n"; #+
 
 		if ( defined $decl and $decl ne "" and
 			defined $loop_var and $loop_var ne "" ) {
@@ -581,11 +522,9 @@ sub matches2fields {
 		}
 	else {
 		$LOGGING and print LOG "LOOP: zero-word declaration\n";
-		$DEBUG > 1 and _WARN "LOOP: zero-word declaration\n"; #+
 
 		my $default_loopvar = 1;
 		($decl, $loop_var) = qw (local $_);    # default loop var; package scope
-		$DEBUG > 1 and warn "Using declaration of local and", " loop-variable of $loop_var\n"; #+
 	}
 
 	if ( !defined $codeblock or $codeblock =~ /^\s*{\s*}\s*$/ ) {
@@ -594,10 +533,8 @@ sub matches2fields {
 		$codeblock = "{
 			print \"$loop_var\\n\" ; # ** USING DEFAULT CODEBLOCK **
 		}";   
-		$DEBUG > 1 and warn "Using default codeblock of $codeblock\n";    #+
 	}
 
-	$DEBUG > 2 and warn "$PKG: proofreading variable now"; #+
 	# I've already extracted what could be a valid variable name,
 	# but the regex was kinda sleazy, so it's time to validate
 	# it using TEXT::BALANCED::extract_variable()
@@ -610,14 +547,12 @@ sub matches2fields {
 			$DEBUG > 1 and show_subs ("Pre-extract_variable 3\n");
 		my ( $loop_var2, @rest ) = extract_variable($loop_var);
 		if ( $loop_var2 ne $loop_var ) {
-			$DEBUG > 1 and warn "$PKG: extracted var diff from parsed var: ", "$loop_var / extracted: $loop_var2, @rest\n"; #+
 			$DEBUG > 0 and warn
 			  "$PKG: varname for select loop failed validation",
 			  " #$::_LOOP_COUNT: $loop_var\n";
 		}
 	}
 	else {
-		$DEBUG > 1 and warn "$subname: skipping variable validation\n"; #+
 		;
 	}
 
@@ -625,13 +560,9 @@ sub matches2fields {
         # okay for this to be empty string; means user wants it global, or
         # declared it before loop
 
-	$DEBUG > 2 and _WARN "$subname: values: $values\n"; #+
 
 	# make version of \$codeblock without curlies at either end
 	( $codeblock2 = $codeblock ) =~ s/^\s*\{|\}\s*$//g;
-	$DEBUG > 4 and _WARN "\$codeblock2 is: $codeblock2\n"; #+
-	# $DEBUG > 4 and _WARN "\$values in m2f is: $values\n"; #+
-	#+ die;
 
 	defined $decl and $decl eq 'unset' and undef $decl; # pass as undef
 
@@ -643,16 +574,12 @@ sub enloop_codeblock {
 	my $subname = sub_name();
 
 	$Shell::POSIX::Select::_ENLOOP_CALL_COUNT++;
-	$REPORT > 0 and _WARN "\n$subname entered, call #$Shell::POSIX::Select::_ENLOOP_CALL_COUNT\n"; #+
 
 
 	my ( $decl, $loop_var, $values, $codestring, $dcode, $loopnum ) = @_;
-	$REPORT > 0 and _WARN "$subname entered, loopnum is $loopnum\n"; #+
 
-	$DEBUG > 2 and _WARN "Loop var received as: $loop_var\n", " Values received as: '$values'\n", " Dcode received as: $dcode\n"; #+
 
 	(defined $values and $values ne "") or do {
-		$DEBUG > 1 and _WARN "NO VALUES! Using dummy ones"; #+
 		$values = '( dummy1, dummy2 )';
 	};
 
@@ -661,9 +588,7 @@ sub enloop_codeblock {
 		  ' # LOOP-VAR DECLARATION REQUESTED (perhaps by default)' :
 		  " ; # NO DECLARATION OF LOOP-VAR REQUESTED";
 
-	$DEBUG > 2 and _WARN "DECLARATION is '$declaration'\n", " loop_var is $loop_var\n"; #+
 
-	$DEBUG > 2 and _WARN "LOOP_BLOCK is '$codestring'\n"; #+
 
 	my $arrayname = $PKG . '::looplist';
 	my $NL = '\n';
@@ -682,55 +607,25 @@ sub enloop_codeblock {
 	);
 # warn "LOGGING is now $LOGGING\n";
 	$LOGGING and (print PART1 $parts[0] or _DIE "failed to write to PART1\n");
-		$DEBUG > 2 and warn "SETTING $arrayname to $values\n"; #+
 
 	push @parts, qq(
 	# critical for values's contents to be resolved in user's scope
 		local \@$arrayname=$values;
 
 		local \$${PKG}::num_values=\@$arrayname;
-		\$${PKG}::DEBUG > 2 and warn "ARRAY VALUES ARE: \@$arrayname\\n"; #+
-		\$${PKG}::DEBUG > 2 and warn "NUM VALUES is \$${PKG}::num_values\\n"; #+
-		\$${PKG}::DEBUG > 1 and warn "user-program debug level is \$${PKG}::U_WARN\\n"; #+
 
 		$declaration	# loop-var declaration appears here
 	);
-	#+die "now" ;
 
 	$LOGGING and (print PART2 $parts[1] or _DIE "failed to write to PART1\n");
 
-	if ( $Shell::POSIX::Select::_Fudging and	#+
-		$codestring =~ /[\000..\025]/ ) {	#+
-		$DEBUG > 2 and _WARN "Fudging in code for \$codestring;" ; #+
-		$DEBUG > 2 and _WARN " control chars there!: '$codestring'!\n"; #+
-		$codestring = 'print';	#+
-	}	#+
-	$DEBUG > 2 and _WARN "\$codestring is: $codestring\n"; #+
-	$DEBUG > 2 and _WARN "\$dcode is: '$dcode'\n"; #+
-	$DEBUG > 2 and _WARN "\$arrayname is: $arrayname\n"; #+
 
-	$DEBUG > 2 and !defined $dcode and _WARN "Dcode is unset"; #+
-	$DEBUG > 2 and !defined $arrayname and _WARN "arrayname is unset"; #+
 
 	# no strict 'refs';
-	# _WARN "arrayname is $arrayname, and contains: @$arrayname"; #+
 	# die;
 	# use strict 'refs';
 
-	$DEBUG > 2 and !defined $Shell::POSIX::Select::_autoprompt and _WARN "autoprompt is unset"; #+
-	$DEBUG > 2 and !defined $codestring and _WARN "codestring is unset"; #+
 
-!defined  $dcode and warn "DCODE";	#+
-!defined  $PKG and warn "PKG";	#+
-!defined  $arrayname and warn "ARRAYNAME";	#+
-!defined  $NL and warn "NL";	#+
-!defined  $ON and warn "ON";	#+
-!defined  $OFF and warn "OFF";	#+
-!defined  $BOLD and warn "BOLD";	#+
-!defined  $SGR0 and warn "SGR0";	#+
-!defined  $loop_var and warn "\Uloop_var";	#+
-!defined  $loopnum and warn "\Uloopnum";	#+
-!defined  $codestring and warn "\Ucodestring";	#+
 
 # CODING NOTES: don't use standalone word "select" in following,
 # because it triggers scan for second loop
@@ -754,13 +649,12 @@ sub enloop_codeblock {
 		$DEBUG > 2 and warn "do_prompt is \$${PKG}::do_prompt[$loopnum]\\n";
     if ( defined \$${PKG}::menu ) {             # No list, no iterations!
       while (1) {    # for repeating prompt for selections
-		 # localize, so I don't have to reset $Reply for outer loop on exit from inner
+		 # localize, so I don't have to reset $Reply for
+		 # outer loop on exit from inner
 		 local (\$Reply);
-# warn "32";
         while (1) {    # for validating user's input
           local \$${PKG}::bad = 0;
 
-# warn "33";
           # local decl suppresses newline on prompt when -l switch turned on
           {
             local \$\\;
@@ -773,41 +667,27 @@ sub enloop_codeblock {
 								print STDERR "\\n\\n";
 								\$${PKG}::_extra_nl=0;
 							}
-							print STDERR "\$${PKG}::menu$NL$ON\$${PKG}::Prompt[$loopnum]$OFF$BOLD ";
+							print STDERR
+								"\$${PKG}::menu$NL$ON\$${PKG}::Prompt[$loopnum]$OFF$BOLD ";
 						}
-# warn "34";
           }
-# warn "37";
 
-          #			\$${PKG}::do_prompt=$Shell::POSIX::Select::_autoprompt;
-          \$${PKG}::do_prompt[$loopnum]= 0; # constant prompting depends on style
-# warn "38";
+          #	\$${PKG}::do_prompt=$Shell::POSIX::Select::_autoprompt;
+					# constant prompting depends on style
+          \$${PKG}::do_prompt[$loopnum]= 0;
 
           if ( \$${PKG}::_testmode eq 'make'
 						or \$ENV{Shell_POSIX_Select_reference}
 					) {
 						\$Reply = undef;
 						# dump filtered source for comparison against expected
-#+						\$${PKG}::dump_data=1; # seen as lone instance by compiler!
-#+							\$Shell::POSIX::Select::dump_data=1;
-#+						\$Shell::POSIX::Select::_TTY and 
-#+							print Shell::POSIX::Select::TTY "DUMP SOURCE SET TRUE; exiting\\n";
-#+						\$Shell::POSIX::Select::_TTY and
-#+							print Shell::POSIX::Select::TTY "DUMP SOURCE SET TRUE; exiting\\n";	# dual
-#+						\$Shell::POSIX::Select::_TTY and
-#+							print Shell::POSIX::Select::TTY "Finished reference source dumps\\n";
-						exit;
+						exit 222;	# code for graceful, expected, early exit
 				}
           else {
-# warn "40";
-				# I get "use of uninitialized value in <HANDLE>" 
-				# if I assign directly to ENV var!  Does not normally happen!
-				\$^W=0;
-#+ warn "Waiting for input";
+					# \$^W=0;
 						\$Eof=0;
             \$Reply = <STDIN>;
-#+ warn "Got input";
-				\$^W=1;
+					# \$^W=1;
 
             if ( !defined( \$Reply ) ) {
               defined "$BOLD" and "$BOLD" ne "" and print STDERR "$SGR0";
@@ -825,7 +705,7 @@ sub enloop_codeblock {
 							\$Eof=1;
               last _SEL_LOOP$loopnum;
             }
-				!defined \$Reply and die "REPLY accessed, while undefined";
+						!defined \$Reply and die "REPLY accessed, while undefined";
             chomp \$Reply;
 
             # undo emboldening of user input
@@ -854,10 +734,7 @@ sub enloop_codeblock {
 							 $DEBUG > 2 and warn "About to last out of Reply Validator Loop\n";
             \$${PKG}::bad or last;    # REPLY VALIDATOR EXITED HERE
           }    # if for validating user input
-# warn "99";
         }    # infinite while for validating user input
-# warn "100";
-#        \$Reply = \$Reply;
 
         $loop_var = \$$arrayname\[\$Reply - 1];    # set users' variable
 
@@ -878,8 +755,7 @@ sub enloop_codeblock {
       \$${PKG}::DEBUG > 0 and warn "$PKG: Select Loop #$loopnum has no list, so no iterations\\n";
     }
 	# return omitted above, to get last expression's value
-	# returned automatically, just like shell's version of eslect
-	# timji: REMOVE KEYWOORD IN LINE ABOVE AFTER DETERMINING WHY ITS TROUBLESOME!
+	# returned automatically, just like shell's version 
 
 	);	# push onto parts ender
 	}	# local scope for $^W mod
@@ -889,6 +765,7 @@ sub enloop_codeblock {
 	push @parts, qq(
 	  } # **** END NEW SCOPE FOR SELECTLOOP #$loopnum ****
 	} # **** END WRAPPER SCOPE FOR SELECTLOOP #$loopnum ****
+	# vi:ts=2 sw=2:
 	);
 
 	$LOGGING and (print PART4 $parts[3] or _DIE "failed to write to PART4\n");
@@ -902,8 +779,6 @@ sub enloop_codeblock {
 sub make_menu {
 	my $subname = sub_name();
 
-	$REPORT > 0 and _WARN "$subname entered\n"; #+
-	$DEBUG > 2 and _WARN "arguments are @_\n"; #+
 
 	# Replacement of empty list by @_ or @ARGV happens in matches2fields
 	# Here we check to see if we got arguments from somewhere
@@ -914,7 +789,6 @@ sub make_menu {
 	my ($prompt) = shift;
 	my (@values) = @_;
 	unless (@values) {
-		$DEBUG > 3 and _WARN "$subname RECEIVED NO VALUES, RETURNING NOW\n"; #+
 		return ( undef, undef );    # can't make menu out of nothing!
 	}
 	my ( $l, $l_length ) = 0;
@@ -922,13 +796,11 @@ sub make_menu {
 	my ( $sep, $padding ) = "" x 2;
 	my $choice = "";
 
-	$DEBUG > 3 and _WARN "In 2 prep_menu; ", scalar @_, " arguments, @_\n"; #+
 
 	# Find longest string value in selection list
 	my $v_length = 0;
 
 	for ( my $i = 0 ; $i < @values ; $i++ ) {
-		$DEBUG > 2 and $LOGGING and print LOG "Testing $i\n"; #+
 		( $l = length $values[$i] ) > $v_length and $v_length = $l;
 	}
 	$DEBUG > 3 and $LOGGING and print LOG "Longest value is $v_length chars\n";
@@ -936,7 +808,6 @@ sub make_menu {
 	# Figure out lengths of labels (numbers on menu selections)
 	$DEBUG > 3 and $LOGGING and print LOG "Number of values is ", scalar @values, "\n";
 
-	$DEBUG > 4 and _WARN "\@values is: @values\n"; #+
 
 	@values >= 10_000	? $l_length = 5 :
 	@values >= 1_000	? $l_length = 4 :
@@ -973,14 +844,11 @@ $LOGGING and print LOG "T-Cols, Columns, label: $COLS, $columns, $one_label\n";
 				defined $ENV{Select_POSIX_Shell_Prompt} ? $ENV{Select_POSIX_Shell_Prompt}  :
 					 $Shell::POSIX::Select::_default_prompt;	
 							 ;
-	$DEBUG > 1 and show_subs ("Prompt set to: ", $Shell::POSIX::Select::Prompt); #+
 
 	$DEBUG > 3 and $LOGGING and print LOG "Making menu\n";
-	$DEBUG > 3 and $LOGGING and print STDERR "Making menu\n"; #+
 
 	{
 		local $, = "\n";
-		$DEBUG > 2 and _WARN( "\ncolumns, l_length, v_length, sep, values", $columns, $l_length, $v_length, $sep, @values, "\n" ); #+
 	}
 
 	my $menu;
@@ -1002,7 +870,6 @@ sub log_files {
 	my $subname = sub_name();
 	my ($dir, $sep);
 
-	$REPORT > 0 and _WARN "$subname entered\n"; #+
 
 	if ( $LOGGING == 1 ) {	
 		$dir = tmpdir();
@@ -1065,11 +932,8 @@ sub import {
 	my %import;
 	$_import_called++;
 
-  $REPORT > 0 and _WARN "$subname entered\n"; #+
 
-	$DEBUG > 4 and _WARN "$subname reporting on call #$_import_called\n"; #+
 
-	$DEBUG > 2 and _WARN "In import, got these args: @_\n"; #+
 
 	shift;	# discard package name
 
@@ -1083,7 +947,6 @@ sub import {
 # warn "Caller of $subname is ", scalar caller, "\n";
 my $user_pkg=caller;
 #	$DEBUG > 2 and
-# print "In import, received these args: @_\n";	#+
 for (my $i=0;  $i<@_; $i++) { 
 	my $found=0;
 	foreach (@EXPORT_OK) {	# Handle $Headings, etc.
@@ -1105,18 +968,13 @@ map { delete $_[$_] } values %import;	# but this works
 
 @_= grep defined,  @_;	# reset, to eliminate extracted imports
 # warn "Numvals in array is now ", scalar @_, "\n";
-	$DEBUG > 2 and	#+
-	print "Remaining arguments: @_\n"; #+
 #	$DEBUG > 4 and
-#	warn "18 U_WARN set to default of $Shell::POSIX::Select::U_WARN"; #+
 		# warnings sets user-program debugging level
 		# debug sets module's debuging level
 		my @legal_options = qw( style  prompt  testmode  warnings  debug logging );
 		my %options =
 			hash_options(\@legal_options, @_ );	# style => Korn, etc.
 
-$DEBUG > 0 and	#+
-	do { foreach (sort keys %options) { warn "$_/'$options{$_}'"; } }; #+
 
 		my @styles=qw( bash  korn );
 		my @prompts=qw( generic korn bash arrows );
@@ -1130,7 +988,6 @@ $DEBUG > 0 and	#+
 #+ warn "Checking logging variable\n";
 		$_ = $ENV{Shell_POSIX_Select_logging} || $options{logging};
 		if (defined) {
-			#+ warn "It is defined\n";
 			# unless ( is_unix() ) {
 			# 	warn "$PKG\::$subname: logging is only for UNIX-like OSs\n";
 			# }
@@ -1143,9 +1000,6 @@ $DEBUG > 0 and	#+
 			   $DEBUG > 1 and _DIE;
 			}
 		}
-		else {	#+
-			$DEBUG > 1 and warn "It is NOT defined\n";	#+
-		}	#+
 
 		# "debug" enables/disables informational messages while running user program
 		$_ = $ENV{Shell_POSIX_Select_warnings} || $options{warnings};
@@ -1166,7 +1020,6 @@ $DEBUG > 0 and	#+
 		if (defined) {
 			if (/^\d+$/) {
 				$Shell::POSIX::Select::DEBUG = $_;
-				#+ warn "$PKG: Set debug to: $Shell::POSIX::Select::DEBUG";
 			}
 			else {
 			   _WARN "$PKG\::$subname: Invalid debug option '$_'\n";
@@ -1197,7 +1050,6 @@ $DEBUG > 0 and	#+
 			elsif ( $Shell::POSIX::Select::_style eq 'B' ) { $autoprompt=1; }
 
 			$Shell::POSIX::Select::_autoprompt = $autoprompt;
-			$DEBUG > 2 and warn "Autoprompt is: $Shell::POSIX::Select::_autoprompt\n"; #+
 			$_ = $ENV{Shell_POSIX_Select_prompt} || $options{prompt} ;
 			if (defined) {
 				$_=lc $_;
@@ -1269,7 +1121,6 @@ die 33;
 				}
 			}
 		# ENV variable overrides program spec
-#+		warn "Checking ENV for overriding option settings";	#+
 #+		defined $ENV{Shell_POSIX_Select_style} and
 #+			$Shell::POSIX::Select::_style=$ENV{Shell_POSIX_Select_style} ;
 #+		defined $ENV{Shell_POSIX_Select_prompt} and
@@ -1285,14 +1136,6 @@ die 33;
 
 $DEBUG > 2 and warn "37 Testmode set to $Shell::POSIX::Select::_testmode\n";
 
-		$DEBUG > 1 and warn "-"  x 80, "\n"; #+
-		$DEBUG > 2 and #+
-		_WARN "$subname: Debugging option set to: '$DEBUG'\n"; #+
-		$DEBUG > 2 and _WARN "$subname: Loop-style set to: '$Shell::POSIX::Select::_style'\n"; #+
-		$DEBUG > 2 and _WARN "$subname: Testmode set to: '$Shell::POSIX::Select::_testmode'\n"; #+
-		$DEBUG > 2 and defined $Shell::POSIX::Select::_prompt and _WARN "$subname: Prompt set to: '$Shell::POSIX::Select::_prompt'\n"; #+
-		$DEBUG > 4 and warn "88 U_WARN set to default of $Shell::POSIX::Select::U_WARN"; #+
-		$DEBUG > 1 and warn "-"  x 80, "\n"; #+
 		$LOGGING and log_files();
 
 		$ENV{Shell_POSIX_Select_reference} and
@@ -1331,7 +1174,6 @@ $DEBUG > 2 and warn "37 Testmode set to $Shell::POSIX::Select::_testmode\n";
 
 	( $ON , $OFF , $BOLD ,  $SGR0 , $COLS ) =
 		display_control ($Shell::POSIX::Select::dump_data);
-		# $DEBUG >2 and die "Columns returned as $ON$COLS$OFF\n"; #+
 }
 
 sub export {	# appropriated from Switch.pm
@@ -1360,17 +1202,8 @@ sub hash_options {
 	my %options2 ; 
 
 	my $subname = sub_name();
-	$REPORT > 0 and _WARN "$subname entered\n"; #+
 
-	$DEBUG > 2 and warn "Legal keys are: @$ref_legal_keys\n"; #+
 
-	# FORCING DEBUG MODE	#+
-	if ( $DEBUG > 1 ) {	#+
-		print "$subname: $num_options options received:\n";	#+
-		foreach my $key ( sort ignoring_case keys %options) {	#+
-			print "$key -> $options{$key}\n";	#+
-		}	#+
-	}	#+
 
 	if ($num_options) {
 		my @legit_options =
@@ -1388,30 +1221,16 @@ sub hash_options {
 		  if ($num_options > keys %options2) { # options filtered out?
 			my $msg= "$PKG\::$subname:\n  Invalid options: " ;
 			$msg .= "@illegit_options\n";
-			_WARN "$msg\n";	# warn/carp don't handle $,  #+
 			_DIE;	# Can't be conditional on DEBUG setting,
 						# because that comes after this sub returns!
 			}
 		}
 
-		if ( $DEBUG > 1 ) {	#+
-			print "\nOptions accepted:\n";	#+
-			foreach my $key ( sort ignoring_case keys %options2 ) {	#+
-				defined $options2{$key} and	#+
-					print "$key\t-> '$options2{$key}'\n";	#+
-			}	#+
-		}	#+
 	}
-#HERE		if ($DEBUG > 2) {	#+
-			local $,="/";	#+
 #+			warn "Original keys/values\n";
 #+ foreach (sort keys %options) { warn "$_/'$options{$_}'   "; }
 #+			warn "Final keys/values\n";
 #+ foreach (sort keys %options2) { warn "$_/'$options{$_}'   "; }
-#			warn "Final keys: ", keys %options2, "\n";	#+
-#			warn "Original values keys: ", values keys %options, "\n";	#+
-#			warn "Final values keys: ", values keys %options2, "\n";	#+
-#HERE		}	#+
 
 	return %options2;
 }
@@ -1419,7 +1238,6 @@ sub hash_options {
 sub show_subs {
 		# show sub-string in reverse video, primarily for debugging
 		my $subname = sub_name();
-		$REPORT > 5 and _WARN "$subname entered\n"; #+
 
 		 @_ >= 1 or die "${PKG}\::subname: no arguments\n" ;
 		 my $msg=shift || '<no msg>';
@@ -1436,7 +1254,6 @@ sub gobble_spaces {
 	my $subname = sub_name();
 
 	my $pos=pos();	# remember current position
-	$DEBUG_FILT > 1 and warn "Pos now at $pos\n"; #+
 	if (/\G\s+/g) {
 		$DEBUG_FILT > 1 and
 			warn "$subname: space gobbler matched '$&' of length ", length $&, "\n" ;
@@ -1446,14 +1263,11 @@ sub gobble_spaces {
 		pos()=$pos;	# reset to prior position
 	}
 	$pos=pos();	# identify current position
-	$DEBUG_FILT > 1 and warn "$subname: Pos now at $pos\n"; #+
-	$DEBUG_FILT > 0 and show_subs ("$subname: Remaining string starts with:", $_, pos($_), 10); #+
 }
 
 sub display_control {
 	my $subname = sub_name();
 
-	$REPORT > 0 and _WARN "$subname entered\n"; #+
 	my $flag=shift;
 	my ( $on , $off , $bold ,  $sgr0 , $cols ) ;
 
@@ -1474,9 +1288,7 @@ sub display_control {
 			}
 		}
 		else {
-			$DEBUG >2 and	warn "Operating System not UNIX;", $^O, "\n"; #+
 		}
-		$DEBUG >2 and	warn "Columns is $ON$COLS$OFF\n"; #+
 		$DEBUG > 2 and warn "Returning $on , $off , $bold , sgr0 , $cols \n";
 	}
 		return ($on || "", $off || "", $bold || "", $sgr0 || "", $cols || 80);
@@ -1530,9 +1342,7 @@ END { # END block
 	else {
 		defined $SGR0 and $SGR0 ne "" and print STDERR "$SGR0";	# ensure turned off
 		$DEBUG > 1 and $LOGGING and print LOG "\n$PKG finished\n"; 
-	#+	$DEBUG > 1 and warn "END: Processed $::_LOOP_COUNT select loops\n";
 		print STDERR "\n";	# ensure shell prompt starts on fresh line
-	#+	print "Signals: " , %SIG;
 	}
 }
 
@@ -1569,11 +1379,10 @@ and it's the I<only> UNIX shell loop that's missing from the Perl language.  Unt
 
 NOTE: In the following, the enclosing square brackets I<(not typed)> identify optional elements, and vertical bars indicate mutually-exclusive choices:
 
-select
-B<[>B<[>my|local|our<]>
-scalar_varB<]>
-( B<[>LISTB<]> )
-{ B<[>CODEB<]> } 
+B<select>
+[ [ my | local | our ] scalar_var ]
+B<(> [ LIST ] B<)>
+B<{> [ CODE ] B<}>
 
 =for comment
 C<select>
@@ -1603,7 +1412,7 @@ for more interesting uses of C<select>.
     }
     ship ($shipper, $ARGV[0]);  # prints confirmation message
 
-I<Screen>
+B<Screen>
 
     ship2me.plx  '42 hemp toothbrushes'  # program invocation
     
@@ -1630,7 +1439,7 @@ This variation on the preceding example shows how to use a custom menu-heading a
     }
     ship ($shipper, $ARGV[0]);  # prints confirmation message
 
-I<Screen>
+B<Screen>
 
     ship2me2.plx '42 hemp toothbrushes'
 
@@ -1677,6 +1486,9 @@ or more of the optional portions.
 
 Supported invocation formats include the following:
 
+=begin man
+.nf
+\f(CW
  use Shell::POSIX::Select ;
 
  select                 ()      { }         # Form 0
@@ -1686,6 +1498,38 @@ Supported invocation formats include the following:
  select my      $var    (LIST)  { CODE }    # Form 4
  select our     $var    (LIST)  { CODE }    # Form 5
  select local   $var    (LIST)  { CODE }    # Form 6
+
+=end man
+
+=begin text
+
+ use Shell::POSIX::Select ;
+
+ select                 ()      { }         # Form 0
+ select                 ()      { CODE }    # Form 1
+ select                 (LIST)  { CODE }    # Form 2
+ select         $var    (LIST)  { CODE }    # Form 3
+ select my      $var    (LIST)  { CODE }    # Form 4
+ select our     $var    (LIST)  { CODE }    # Form 5
+ select local   $var    (LIST)  { CODE }    # Form 6
+
+=end text
+
+=begin html
+
+<PRE>
+<TT>
+ select                 ()      { }         <I># Form 0</I>
+ select                 ()      { CODE }    <I># Form 1</I>
+ select                 (LIST)  { CODE }    <I># Form 2</I>
+ select         $var    (LIST)  { CODE }    <I># Form 3</I>
+ select my      $var    (LIST)  { CODE }    <I># Form 4</I>
+ select our     $var    (LIST)  { CODE }    <I># Form 5</I>
+ select local   $var    (LIST)  { CODE }    <I># Form 6</I>
+</TT>
+</PRE>
+
+=end html
 
 If the loop variable is omitted (as in I<Forms> I<0>, I<1> and I<2> above),
 it defaults to C<$_>, C<local>ized to the loop's scope.
@@ -1832,7 +1676,7 @@ and one declared as private I<for the loop> to be confined to it:
 
     select my $loopvar ( ) { }
     print "$loopvar DOES NOT RETAIN last value from loop here\n";
- -----------------------------------------------------------------------
+    -------------------------------------------------------------
     my $loopvar;
     select $loopvar ( ) { }
     print "$loopvar RETAINS last value from loop here\n";
@@ -1891,7 +1735,12 @@ upon exit from a C<select> loop (see L<"Eof Detection">).
 
 I<NOTE:> The values shown for options are the defaults, except for C<testmode>, which has none.
 
-=head2 $Prompt
+=head2 Prompts
+
+There are two ways to customize the prompt used to solicit choices from
+C<select> menus; through use of the prompt I<option>, which applies to
+all loops, or the C<$Prompt> variable, which can be set independently for
+each loop.
 
 =head3 The prompt option
 
@@ -2022,11 +1871,11 @@ missing parts that are required by C<foreach>.
 
 For instance,
 
-C<select () {}> 
+C<	select () {}> 
 
-I<	must be rewritten as>
+I<	must be rewritten as follows to explicitly show "@ARGV" (assuming it's not in a subroutine) and "print">
 
-C<foreach (@ARGV) { print; }>
+C<	foreach (@ARGV) { print; }>
 
 =head1 ADDITIONAL EXAMPLES
 
@@ -2047,12 +1896,12 @@ As illustrated below,
 it could be used with Shell command substitution to provide selected arguments to a command.
 
     use Shell::POSIX::Select  (
-      prompt => 'Pick File(s):' ,
-      style => 'Korn'  # for automatic prompting
+        prompt => 'Pick File(s):' ,
+        style => 'Korn'  # for automatic prompting
     );
     select ( <*> ) { }
 
-I<Screen>
+B<Screen>
 
     lp `pick_file`>   # Using UNIX-like OS
 
@@ -2076,12 +1925,12 @@ a long-listing of each chosen one.
 
  select my $var (@ARGV) { system "ls -ldi '$var'" } # Maximal typing
 
- # OR, through use of defaults, the following is equivalent:
+     # OR, through use of defaults, the following is equivalent:
 
  select ( ) { system "ls -ldi '$_'" } # Using default var & LIST
- -----------------------------------------------------------------
 
-I<Screen>
+
+B<Screen>
 
  long_listem.plx  *.txt
 
@@ -2158,14 +2007,14 @@ allows me to select the man-page of interest from a menu.
      system "perldoc '$manpage'" ;
  }
 
-I<Screen>
+B<Screen>
 
   1) perl5004delta     2) perl5005delta     3) perl561delta    
   4) perl56delta       5) perl570delta      6) perl571delta    
  . . .
 
-I<This large menu spans multiple screens, but all parts can be accessed
- using your normal terminal scrolling facility.>
+I<(This large menu spans multiple screens, but all parts can be accessed
+ using your normal terminal scrolling facility.)>
 
  Enter number of choice: 6
 
@@ -2180,7 +2029,7 @@ I<This large menu spans multiple screens, but all parts can be accessed
         release and the 5.7.1 release.
  . . .
 
-=head1 MEDIUM PROGRAMS
+=head2 MEDIUM PROGRAMS
 
 =head3 pick.plx
 
@@ -2204,7 +2053,7 @@ C<-n> invocation option and C<< <> >> input operator.
  }
  select ( @choices ) { }   # prints selections to output
 
-I<Sample invocations (UNIX-like system)>
+B<Sample invocations (UNIX-like system)>
 
     lp `pick *.txt`    # same output as shown for "pick_file"
 
@@ -2224,21 +2073,21 @@ so the file deleted on the previous iteration gets removed from the next menu.
 The outer loop is I<labeled> (as C<OUTER>), so that the inner loop can refer to it when
 necessary.
 
-    use Shell::POSIX::Select (
-        '$Eof',   # for ^D detection
-        prompt=>'Choose file for deletion:'
-    ) ;
+ use Shell::POSIX::Select (
+     '$Eof',   # for ^D detection
+     prompt=>'Choose file for deletion:'
+ ) ;
 
-  OUTER:
-    while ( @files=<*.py> ) {  # loop exited from within
-        select ( @files ) { 
-           print STDERR  "Really delete $_? [y/n]: " ;
-           my $answer = <STDIN> ;     # ^D sets $Eof below
-           defined $answer  or  last OUTER ;  # exit on ^D
-           $answer eq "y\n"  and  unlink  and  last ;
-        }
-        $Eof and last;
-    }
+ OUTER:
+     while ( @files=<*.py> ) {  # loop exited from within
+         select ( @files ) { 
+             print STDERR  "Really delete $_? [y/n]: " ;
+             my $answer = <STDIN> ;     # ^D sets $Eof below
+             defined $answer  or  last OUTER ;  # exit on ^D
+             $answer eq "y\n"  and  unlink  and  last ;
+         }
+         $Eof and last;
+ }
 
 =head3 lc_filename.plx
 
@@ -2255,25 +2104,26 @@ with a (depleted) filename menu.  But if the user
 presses C<^D> to the menu prompt, C<$Eof> will test
 as I<TRUE>, triggering the exit from the C<while> loop.
 
-    use Shell::POSIX::Select (
-        '$Eof' ,
-        prompt => 'Enter number (^D to exit):'
-    );
+ use Shell::POSIX::Select (
+     '$Eof' ,
+     prompt => 'Enter number (^D to exit):'
+     style => 'Korn'  # for automatic prompting
+ );
 
-    # Rename selected files from current dir to lowercase
-    while (1) {    # restarts select to get updated menu
-        select ( <*[A-Z]*> ) { # skip fully lower-case names
-            if (rename $_, "\L$_") {
-                last ;
-            }
-            else {
-               warn "$0: rename failed for $_: $!\n";
-           }
-        }
-        $Eof  and  last ;   # Handle <^D> to menu prompt
-    }
+ # Rename selected files from current dir to lowercase
+ while ( @files=<*[A-Z]*> ) {    # restarts select to get updated menu
+     select ( @files ) { # skip fully lower-case names
+         if (rename $_, "\L$_") {
+             last ;
+         }
+         else {
+             warn "$0: rename failed for $_: $!\n";
+         }
+     }
+     $Eof  and  last ;   # Handle <^D> to menu prompt
+ }
 
-I<Screen>
+B<Screen>
 
  lc_filename.plx
 
@@ -2294,17 +2144,17 @@ its two loops, and shows the use of a label on the outer loop.
  $Prompt="Choose Quantity:";
  
  OUTER:
- select my $quantity (1..4) {
-    $Heading="\nSize Menu:" ;
-    $Prompt='Choose Size:' ;
+   select my $quantity (1..4) {
+      $Heading="\nSize Menu:" ;
+      $Prompt='Choose Size:' ;
+  
+      select my $size ( qw (L XL) ) {
+          print "You chose $quantity units of size $size\n" ;
+          last OUTER ;    # Order is complete
+      }
+   }
 
-    select my $size ( qw (L XL) ) {
-        print "You chose $quantity units of size $size\n" ;
-        last OUTER ;    # Order is complete
-    }
- }
-
-I<Screen>
+B<Screen>
 
  order.plx
 
@@ -2325,7 +2175,7 @@ I<Screen>
  Choose Size: 2
  You chose 2 units of size XL
 
-=head1 LARGE PROGRAMS
+=head2 LARGE PROGRAMS
 
 =head3 browse_records.plx
 
@@ -2360,7 +2210,7 @@ example, we'll browse the UNIX password file by user-name.
      print "$f2r{$record}\n" ;
  }
 
-I<Screen>
+B<Screen>
 
  browsrec.plx  '1'  /etc/passwd  ':'
 
@@ -2403,16 +2253,16 @@ option associated with each option description.
  $Heading="\n**** Style Menu ****" ;
  $Prompt= "Choose listing style:" ;
  OUTER:
- select $format ( @formats ) {
-     $user_format=$fmt_opt[ $Reply - 1 ] ;
- 
-     $Heading="\n**** File Menu ****" ;
-     $Prompt="Choose files to list:" ;
-     select $type ( @types ) {   # ^D restarts OUTER
-         $user_type=$typ_opt[ $Reply - 1 ] ;
-         last OUTER ;    # leave loops once final choice obtained
-     }
- }
+   select $format ( @formats ) {
+       $user_format=$fmt_opt[ $Reply - 1 ] ;
+   
+       $Heading="\n**** File Menu ****" ;
+       $Prompt="Choose files to list:" ;
+       select $type ( @types ) {   # ^D restarts OUTER
+           $user_type=$typ_opt[ $Reply - 1 ] ;
+           last OUTER ;    # leave loops once final choice obtained
+       }
+   }
  $Eof  and  exit ;   # handle ^D to OUTER
  
  # Now construct user's command
@@ -2426,9 +2276,9 @@ option associated with each option description.
  
  system $command ;    # finally, run the command
  
-I<Screen>
+B<Screen>
 
- menu_ls
+ menu_ls.plx
  
  ** LS-Command Composer **
  
@@ -2510,7 +2360,7 @@ be no problem.
 For other problems involving troublesome text within comments, see 
 L<"Failure to Identify select Loops">.
 
-=head2 Occasional Failure to Identify C<select> Loops
+=head2 Failure to Identify C<select> Loops
 
 When a properly formed C<select> loop appears in certain contexts,
 such as before a line containing certain patterns of dollar signs,
@@ -2651,7 +2501,7 @@ L<http://teachmeperl.com/mp4sh.html>) in early fall, 2003.
 
 =head1 SEE ALSO
 
- man ksh    # on UNIX or UNIX-like systems
+ man ksh     # on UNIX or UNIX-like systems
 
  man bash    # on UNIX or UNIX-like systems
 

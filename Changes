@@ -3,4 +3,9 @@ Revision history for Perl extension Shell::POSIX::Select.
 0.01  Sun May  4 00:47:26 PDT 2003
 	- original version; created by h2xs 1.21 with options
 		-XA -n Shell::POSIX::Select
-
+0.02  Mon May  5 11:07:55 PDT 2003
+	- fixed some typos and bugs in sample scripts
+	- reworked documentation slightly
+	- deleted some test programs, modified others
+	- removed some debugging statements to simplify code
+	- added vi:ts=2 sw=2: to dumped source code samples for readability

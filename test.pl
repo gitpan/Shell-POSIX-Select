@@ -41,6 +41,7 @@ BEGIN {
 
 	# restrict to one file, if testing
 	$DEBUG > 2 and @testfiles = $testfiles[0];
+	# @testfiles = 'arrayvar';
 
 	chdir( updir() ) or die "$!";
 
@@ -59,8 +60,9 @@ BEGIN {
 # MAKE THE REFERENCE FILES?
 
 if (
-# 1 or
-	$ENV{Shell_POSIX_Select_reference}) {
+		# 1 or
+		$ENV{Shell_POSIX_Select_reference}
+	) {
 	
 	# create source-code and screen-dump reference databases
 	# If module generates same data on user's platform, test passes
@@ -87,10 +89,15 @@ if (
 		# Or maybe just eval the code?
 		$script = catfile( 'Test_Progs', $_ );
 		system "perl '$script'" ;
-		if ($? ) {
+		if ($?) {
 			warn "$0: Reference code-dump of $_ failed with code $?\n";
-			$DEBUG >2 and system "ls -ld $_ $codeR $screenR";
+			# $DEBUG >2 and system "ls -ld $_ $codeR $screenR";
 			die;
+		}
+		else {
+			$error=`egrep 'syntax | aborted' $screenR 2>/dev/null`;
+			$? or
+				die "Compilation failed for '$screenR'\n\n$error\n";
 		}
 		# Screen file can be empty, so just check existence and perms
 		check_file ($screenR) or die "$screenR is bad\n";
